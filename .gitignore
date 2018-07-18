@@ -157,7 +157,7 @@ x64/
 x86/
 bld/
 build/
-public/
+src/Client/public/js/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
