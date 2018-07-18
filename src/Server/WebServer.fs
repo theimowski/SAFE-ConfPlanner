@@ -41,7 +41,7 @@ let conferenceWebsocket =
       Domain.Behaviour.execute
       [conferenceProjection ; conferencesProjection ; organizersProjection]
       [conferenceQueryHandler ; conferencesQueryHandler ; organizersQueryHandler]
-      @".\conference_eventstore.json"
+      @"conference_eventstore.json"
 
 
 let start clientPath port =

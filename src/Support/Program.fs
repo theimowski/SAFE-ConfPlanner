@@ -2,7 +2,7 @@
 open Support
 
 let readEvents,appendEvents =
-  eventStore @"..\Server\conference_eventstore.json"
+  eventStore @"../Server/conference_eventstore.json"
 
 [<EntryPoint>]
 let main _ =
