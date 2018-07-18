@@ -10,12 +10,8 @@ open Domain
 open Domain.Model
 
 open Fulma
-open Fulma.Elements
-open Fulma.Layouts
-open Fulma.Components
-open Fulma.Extra.FontAwesome
-open Fulma.Elements.Form
 open Fulma.Extensions
+open Fulma.FontAwesome
 
 let private pleaseSelectAConference =
   "Please select a conference"
@@ -253,8 +249,8 @@ let private viewOrganizersPanel dispatch conference organizers =
         [
           Column.column
             [
-              Column.Width (Column.All, Column.IsHalf)
-              Column.Offset (Column.All, Column.IsOneThird)
+              Column.Width (Screen.All, Column.IsHalf)
+              Column.Offset (Screen.All, Column.IsOneThird)
             ]
             [
               viewOrganizers dispatch conference organizers
@@ -368,7 +364,7 @@ let private viewTab currentView selectEditorMsg targetEditor label =
 let private viewTabs currentView selectEditorMsg =
   Tabs.tabs
     [
-      Tabs.IsFullwidth
+      Tabs.IsFullWidth
       Tabs.IsBoxed
     ]
     [
@@ -554,8 +550,8 @@ let private viewConferenceInformation dispatch submodel confirmMsg resetMsg conf
       [
         Column.column
           [
-            Column.Width (Column.All, Column.IsHalf)
-            Column.Offset (Column.All, Column.IsOneThird)
+            Column.Width (Screen.All, Column.IsHalf)
+            Column.Offset (Screen.All, Column.IsOneThird)
           ]
           [
             conferenceInformation
@@ -566,8 +562,8 @@ let private viewConferenceInformation dispatch submodel confirmMsg resetMsg conf
       [
         Column.column
           [
-            Column.Width (Column.All, Column.IsHalf)
-            Column.Offset (Column.All, Column.IsOneThird)
+            Column.Width (Screen.All, Column.IsHalf)
+            Column.Offset (Screen.All, Column.IsOneThird)
           ]
           [
             confirmButton

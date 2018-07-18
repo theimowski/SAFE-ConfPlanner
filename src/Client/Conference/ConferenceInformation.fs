@@ -3,11 +3,11 @@ namespace Conference.ConferenceInformation
 open Fable.Helpers.React
 open Fable.Helpers.React.Props
 open Fable.Core.JsInterop
+
+open Fulma
+open Fulma.FontAwesome
 open Fulma.Color
 open Fulma.Size
-open Fulma.Elements
-open Fulma.Elements.Form
-open Fulma.Extra.FontAwesome
 
 module Types =
   type Model =
@@ -86,7 +86,7 @@ module View =
     let inputType,inputIcon,inputError =
       error |> typeAndIconAndError
 
-    Form.Field.div []
+    Field.div []
       [
         Label.label [] [ str label ]
         Control.div

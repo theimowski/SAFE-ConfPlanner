@@ -1,24 +1,31 @@
-// --------------------------------------------------------------------------------------
-// FAKE build script
-// --------------------------------------------------------------------------------------
+#r @"paket: groupref Build //"
+#load "./.fake/build.fsx/intellisense.fsx"
 
-#r @"packages/build/FAKE/tools/FakeLib.dll"
+#if !FAKE
+  #r "netstandard" // Temp fix for https://github.com/fsharp/FAKE/issues/1985
+  #r "Facades/netstandard" // https://github.com/ionide/ionide-vscode-fsharp/issues/839#issuecomment-396296095
+#endif
 
-open Fake
 open System
 open System.IO
 
-let clientPath = "./src/Client" |> FullName
+open Fake.Core
+open Fake.DotNet
+open Fake.IO
+open Fake.IO.Globbing.Operators
 
-let testsPath = "./src/Domain.Tests" |> FullName
-let serverPath = "./src/Server" |> FullName
+open SAFE.Build
 
-let supportPath = "./src/Support" |> FullName
+let SAFE = SAFEBuild (fun x ->
+    { x with
+        JsDeps = Yarn
+    } )
 
 
-let dotnetcliVersion = Fake.DotNetCli.GetDotNetSDKVersionFromGlobalJson()
+let testsPath = "./src/Domain.Tests" |> Path.getFullName
 
-let mutable dotnetExePath = "dotnet"
+let supportPath = "./src/Support" |> Path.getFullName
+
 
 // Pattern specifying assemblies to be tested using expecto
 // let clientTestExecutables = "test/UITests/**/bin/**/*Tests*.exe"
@@ -29,87 +36,65 @@ let mutable dotnetExePath = "dotnet"
 // --------------------------------------------------------------------------------------
 
 
-let run' timeout cmd args dir =
-    if execProcess (fun info ->
-        info.FileName <- cmd
-        if not (String.IsNullOrWhiteSpace dir) then
-            info.WorkingDirectory <- dir
-        info.Arguments <- args
-    ) timeout |> not then
-        failwithf "Error while running '%s' with args: %s" cmd args
-
-let run = run' System.TimeSpan.MaxValue
+let dotnetExePath = "dotnet"
 
 let runDotnet workingDir args =
     let result =
-        ExecProcess (fun info ->
-            info.FileName <- dotnetExePath
-            info.WorkingDirectory <- workingDir
-            info.Arguments <- args) TimeSpan.MaxValue
+        Process.execSimple (fun info ->
+            { info with
+                FileName = dotnetExePath
+                WorkingDirectory = workingDir
+                Arguments = args }
+        ) TimeSpan.MaxValue
     if result <> 0 then failwithf "dotnet %s failed" args
-
-let platformTool tool winTool =
-    let tool = if isUnix then tool else winTool
-    tool
-    |> ProcessHelper.tryFindFileOnPath
-    |> function Some t -> t | _ -> failwithf "%s not found" tool
-
-let nodeTool = platformTool "node" "node.exe"
-let npmTool = platformTool "npm" "npm.cmd"
-let yarnTool = platformTool "yarn" "yarn.cmd"
-
-do if not isWindows then
-    // We have to set the FrameworkPathOverride so that dotnet sdk invocations know
-    // where to look for full-framework base class libraries
-    let mono = platformTool "mono" "mono"
-    let frameworkPath = IO.Path.GetDirectoryName(mono) </> ".." </> "lib" </> "mono" </> "4.5"
-    setEnvironVar "FrameworkPathOverride" frameworkPath
 
 // --------------------------------------------------------------------------------------
 // Clean build results
 
-Target "Clean" (fun _ ->
-    !!"src/**/bin" ++ "src/**/obj/"
-        ++ "test/**/bin" ++ "test/**/obj/"
-    |> CleanDirs
-    CleanDirs ["bin"; "temp"; "docs/output"; Path.Combine(clientPath,"public/bundle")]
+Target.create "Clean" (fun _ ->
+    !! "src/**/bin"
+    ++ "src/**/obj/"
+    ++ "test/**/bin"
+    ++ "test/**/obj/"
+    |> Shell.cleanDirs
+
+    !! "src/**/obj/*.nuspec"
+    ++ "test/**/obj/*.nuspec"
+    |> Seq.iter Shell.rm
+
+    Shell.cleanDirs ["bin"; "temp"; "docs/output"; "./src/Clientpublic/bundle"]
 )
 
-Target "InstallDotNetCore" (fun _ ->
-    dotnetExePath <- DotNetCli.InstallDotNetSDK dotnetcliVersion
+
+Target.create "InstallDotNetCore" (fun _ ->
+    let dotnetcliVersion = DotNet.getSDKVersionFromGlobalJson()
+    let setParams (options : DotNet.CliInstallOptions) =
+        { options with
+            Version = DotNet.Version dotnetcliVersion }
+
+    DotNet.install setParams |> ignore
 )
 
 // --------------------------------------------------------------------------------------
 // Build library & test project
 
-Target "Restore" (fun _ ->
-    runDotnet currentDirectory "restore"
-)
-
-Target "BuildTests" (fun _ ->
+Target.create "BuildTests" (fun _ ->
     runDotnet testsPath "build"
 )
 
-
-Target "RunTests" (fun _ ->
+Target.create "RunTests" (fun _ ->
     runDotnet testsPath "test"
 )
 
-Target "InstallClient" (fun _ ->
-    printfn "Node version:"
-    run nodeTool "--version" __SOURCE_DIRECTORY__
-    printfn "Yarn version:"
-    run yarnTool "--version" __SOURCE_DIRECTORY__
-    run yarnTool "install --frozen-lockfile" __SOURCE_DIRECTORY__
+Target.create "InstallClient" (fun _ ->
+    SAFE.RestoreClient ()
 )
 
-Target "BuildClient" (fun _ ->
-    runDotnet clientPath "restore"
-    runDotnet clientPath "fable webpack --port free -- -p --mode production"
+Target.create "BuildClient" (fun _ ->
+    SAFE.BuildClient ()
 )
 
-
-Target "RunFixtures" (fun _ ->
+Target.create "RunFixtures" (fun _ ->
     runDotnet supportPath "run"
 )
 
@@ -126,26 +111,20 @@ let port = 8080
 // )
 
 
-Target "Run" (fun _ ->
-    let suave = async { runDotnet serverPath "run" }
-    let fablewatch = async { runDotnet clientPath "fable webpack-dev-server --port free -- --mode development" } // nicht  webpack-dev-server, sonst wird webpack config nicht gefunden
-    let openBrowser = async {
-        System.Threading.Thread.Sleep(5000)
-        Diagnostics.Process.Start("http://"+ ipAddress + sprintf ":%d" port) |> ignore }
-
-    Async.Parallel [|  suave; fablewatch; openBrowser |]
-    |> Async.RunSynchronously
-    |> ignore
+Target.create "Run" (fun _ ->
+    [ SAFE.RunServer; SAFE.RunClient; SAFE.RunBrowser ]
+    |> SAFE.RunInParallel
 )
 
 
 // -------------------------------------------------------------------------------------
-Target "Build" DoNothing
-Target "All" DoNothing
+Target.create "Build" ignore
+Target.create "All" ignore
+
+open Fake.Core.TargetOperators
 
 "Clean"
   ==> "InstallDotNetCore"
-  ==> "Restore"
   ==> "InstallClient"
   ==> "BuildClient"
   ==> "RunTests"
@@ -160,7 +139,4 @@ Target "All" DoNothing
 "BuildTests"
   ==> "RunTests"
 
-"Restore"
-  ==> "RunFixtures"
-
-RunTargetOrDefault "All"
+Target.runOrDefault "All"

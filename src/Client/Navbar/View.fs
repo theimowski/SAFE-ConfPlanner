@@ -2,12 +2,11 @@ module Navbar.View
 
 open Fable.Helpers.React
 open Fable.Helpers.React.Props
-open Fulma.Components
-open Fulma.Elements
-open Fulma.Layouts
-open Fulma.Extra.FontAwesome
-open Fulma.Elements.Form
+
+open Fulma
+open Fulma.FontAwesome
 open Fulma.Color
+
 open Global
 open App.Types
 

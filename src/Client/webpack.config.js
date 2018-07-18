@@ -29,14 +29,15 @@ console.log(
 
 module.exports = {
   devtool: "source-map",
-  entry: resolve("./src/Client/Client.fsproj"),
+  entry: resolve("./Client.fsproj"),
+  mode: isProduction ? "production" : "development",
   output: {
-    path: resolve("./public"),
-    publicPath: "/public",
+    path: resolve("./public/js"),
+    publicPath: "/js",
     filename: "bundle.js"
   },
   resolve: {
-    modules: ["node_modules", resolve("./node_modules/")]
+    modules: [resolve("../../node_modules/")]
   },
   devServer: {
     proxy: {
@@ -45,7 +46,7 @@ module.exports = {
         changeOrigin: true
       }
     },
-    contentBase: resolve("./public"),
+    contentBase: "./public",
     hot: true,
     inline: true,
     historyApiFallback: true

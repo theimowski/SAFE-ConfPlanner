@@ -29,6 +29,8 @@ nuget dotnet-test-nunit
 clitool dotnet-fable
 
 group Build
+  source ~/oss/SAFE-template/nupkg
   source https://nuget.org/api/v2
-  framework >= net461
-  nuget FAKE
+  storage none
+
+  nuget SAFE.Build

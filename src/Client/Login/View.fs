@@ -7,12 +7,10 @@ open Fable.Core.JsInterop
 
 open Login.Types
 
-open Fulma.Layouts
-open Fulma.Elements
+open Fulma
+open Fulma.FontAwesome
 open Fulma.Color
 open Fulma.Size
-open Fulma.Extra.FontAwesome
-open Fulma.Elements.Form
 
 let private typeAndIconAndError error =
   match error with
@@ -36,7 +34,7 @@ let private viewFormField typeIs changeMsg field error label props =
       OnChange (fun event -> !!event.target?value |>changeMsg)
     ]
 
-  Form.Field.div []
+  Field.div []
     [
       Label.label [] [ str label ]
       Control.div
@@ -92,8 +90,8 @@ let private viewLoginRow content =
     [
       Column.column
         [
-          Column.Width (Column.All, Column.IsHalf)
-          Column.Offset (Column.All, Column.IsOneThird)
+          Column.Width (Screen.All, Column.IsHalf)
+          Column.Offset (Screen.All, Column.IsOneThird)
         ]
         [
           content

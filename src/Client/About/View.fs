@@ -2,8 +2,8 @@ module Info.View
 
 open Fable.Helpers.React
 open Fable.Helpers.React.Props
-open Fulma.Layouts
-open Fulma.Elements
+
+open Fulma
 
 let view =
   Section.section []
